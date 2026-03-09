@@ -301,48 +301,6 @@ export function useIntegrations(clientId) {
   );
 }
 
-// ─── SEO Deliverables (detail items) ──────────────────────────────────────
-
-const DEMO_DELIVERABLES = [
-  // SEO Pages
-  { id: "d1", seo_progress_id: "1", title: "Personal Injury Landing Page",   language: "EN", status: "complete",    url: "https://azizilaw.com/personal-injury",   completed_at: new Date(Date.now() - 12*86400000).toISOString(), sort_order: 1 },
-  { id: "d2", seo_progress_id: "1", title: "Car Accident Attorney Page",     language: "EN", status: "complete",    url: "https://azizilaw.com/car-accident",      completed_at: new Date(Date.now() - 8*86400000).toISOString(),  sort_order: 2 },
-  { id: "d3", seo_progress_id: "1", title: "Abogado de Lesiones Personales", language: "ES", status: "complete",    url: "https://azizilaw.com/es/lesiones",       completed_at: new Date(Date.now() - 5*86400000).toISOString(),  sort_order: 3 },
-  { id: "d4", seo_progress_id: "1", title: "Slip and Fall Attorney Page",    language: "EN", status: "in_progress", url: null,  completed_at: null, sort_order: 4 },
-  { id: "d5", seo_progress_id: "1", title: "Accidente de Auto Página",       language: "ES", status: "pending",     url: null,  completed_at: null, sort_order: 5 },
-  { id: "d6", seo_progress_id: "1", title: "Wrongful Death Attorney Page",   language: "EN", status: "pending",     url: null,  completed_at: null, sort_order: 6 },
-  // YouTube
-  { id: "d7",  seo_progress_id: "2", title: "What To Do After a Car Accident",      language: "EN", status: "complete",    url: "https://youtube.com/watch?v=abc123", completed_at: new Date(Date.now() - 14*86400000).toISOString(), sort_order: 1 },
-  { id: "d8",  seo_progress_id: "2", title: "How to File a Personal Injury Claim",  language: "EN", status: "complete",    url: "https://youtube.com/watch?v=def456", completed_at: new Date(Date.now() - 10*86400000).toISOString(), sort_order: 2 },
-  { id: "d9",  seo_progress_id: "2", title: "¿Qué Hacer Después de un Accidente?", language: "ES", status: "complete",    url: "https://youtube.com/watch?v=ghi789", completed_at: new Date(Date.now() - 6*86400000).toISOString(),  sort_order: 3 },
-  { id: "d10", seo_progress_id: "2", title: "Understanding Wrongful Death Claims",  language: "ES", status: "in_progress", url: null, completed_at: null, sort_order: 4 },
-  // FAQ Voice
-  { id: "d11", seo_progress_id: "3", title: "How much does a personal injury lawyer cost?",    language: "EN", status: "complete", completed_at: new Date(Date.now() - 20*86400000).toISOString(), sort_order: 1 },
-  { id: "d12", seo_progress_id: "3", title: "What is the statute of limitations in my state?", language: "EN", status: "complete", completed_at: new Date(Date.now() - 18*86400000).toISOString(), sort_order: 2 },
-  { id: "d13", seo_progress_id: "3", title: "How long does a personal injury case take?",      language: "EN", status: "complete", completed_at: new Date(Date.now() - 15*86400000).toISOString(), sort_order: 3 },
-  { id: "d14", seo_progress_id: "3", title: "Do I need a lawyer for a car accident?",          language: "EN", status: "complete", completed_at: new Date(Date.now() - 11*86400000).toISOString(), sort_order: 4 },
-  // AI Search
-  { id: "d15", seo_progress_id: "4", title: "AI Search Optimization – Practice Areas", language: "EN", status: "complete",    completed_at: new Date(Date.now() - 9*86400000).toISOString(), sort_order: 1 },
-  { id: "d16", seo_progress_id: "4", title: "AI Search Optimization – Location Pages", language: "EN", status: "complete",    completed_at: new Date(Date.now() - 4*86400000).toISOString(), sort_order: 2 },
-  { id: "d17", seo_progress_id: "4", title: "AI Search Optimization – Blog Content",   language: "EN", status: "in_progress", completed_at: null, sort_order: 3 },
-  // Press Release
-  { id: "d18", seo_progress_id: "5", title: "Firm Anniversary Press Release", language: "EN", status: "pending", completed_at: null, sort_order: 1 },
-];
-
-/** Fetch all SEO deliverables for a client */
-export function useSeoDeliverables(clientId) {
-  return useSupabaseQuery(
-    () =>
-      supabase
-        .from("seo_deliverables")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("sort_order"),
-    DEMO_DELIVERABLES,
-    [clientId]
-  );
-}
-
 // ─── Date formatting helper ───────────────────────────────────────────────
 
 export function formatDate(dateStr) {
