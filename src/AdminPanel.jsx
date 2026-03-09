@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
-import { useAdmin, useQuery, S, Badge, SectionHead, Modal, DEMO } from "./adminUtils";
+import { useAdmin, useQuery, S, Badge, SectionHead, Modal, DEMO } from "./adminUtils.jsx";
 
 // ═══ TAB 1: CLIENTS ════════════════════════════════════════════════════════
 function ClientsTab() {
