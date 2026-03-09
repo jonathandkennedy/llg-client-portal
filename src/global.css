@@ -1,0 +1,57 @@
+/* ─── Global Styles ─────────────────────────────────────────────────────── */
+/* Loaded once in main.jsx. All components inherit these.                   */
+/* ──────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+:root {
+  --purple-deep: #3B1460;
+  --purple-mid: #5B2D8E;
+  --purple-light: #7B4BAE;
+  --gold: #C4A450;
+  --gold-light: #DFC777;
+  --gold-pale: #F5EDD4;
+  --ink: #1A1222;
+  --slate: #4A4358;
+  --mist: #F7F5FA;
+  --bg: #F3F1F6;
+  --white: #FFFFFF;
+  --green: #3DAA6D;
+  --border: #E8E4EE;
+  --error: #C44B4B;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Shared keyframes ──────────────────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
