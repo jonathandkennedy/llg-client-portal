@@ -1,4 +1,4 @@
-// ─── adminUtils.js ─────────────────────────────────────────────────────────
+// ─── adminUtils.jsx ─────────────────────────────────────────────────────────
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
 
