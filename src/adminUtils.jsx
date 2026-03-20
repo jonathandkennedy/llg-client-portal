@@ -7,7 +7,7 @@ export function useAdmin() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     async function check() {
-      try const { data: { user } } = await supabase.auth.getUser();
+      try { const { data: { user } } = await supabase.auth.getUser();
 if (user) {
   const { data } = await supabase.from("users").select("role").eq("id", user.id).single();
   setIsAdmin(data?.role === "admin");
