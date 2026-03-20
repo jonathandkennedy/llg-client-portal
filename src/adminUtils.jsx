@@ -1,4 +1,4 @@
-// ─── adminUtils.jsx ─────────────────────────────────────────────────────────
+// ─── adminUtils.jsx ────────────────────────────────────────────────────────
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
 
@@ -7,16 +7,20 @@ export function useAdmin() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     async function check() {
-      try { const { data: { user } } = await supabase.auth.getUser();
-if (user) {
-  const { data } = await supabase.from("users").select("role").eq("id", user.id).single();
-  setIsAdmin(data?.role === "admin");
-} else {
-  setIsAdmin(false);
-} catch { setIsAdmin(false); }
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data } = await supabase.from("users").select("role").eq("id", user.id).single();
+          setIsAdmin(data?.role === "admin");
+        } else {
+          setIsAdmin(false);
+        }
+      } catch {
+        setIsAdmin(false);
+      }
       setLoading(false);
     }
-    if (supabase.url.includes("YOUR_PROJECT")) { setIsAdmin(true); setLoading(false); } else check();
+    check();
   }, []);
   return { isAdmin, loading };
 }
