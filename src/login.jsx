@@ -519,9 +519,7 @@ export default function LoginPage() {
                   Need help? <a href="mailto:support@legalleadsgroup.com">Contact support</a>
                 </p>
 
-                {
-              </div>
-            )}
+            
 
             {/* ── Sending State ── */}
             {step === "sending" && (
