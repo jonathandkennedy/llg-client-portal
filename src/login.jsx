@@ -64,10 +64,9 @@ export default function LoginPage() {
     try {
       await sendMagicLink(email.trim());
       setStep("sent");
-    } catch {
-      // Demo mode: simulate success
-      await new Promise((r) => setTimeout(r, 1500));
-      setStep("sent");
+    } catch (err) {
+      setErrorMsg(err.message || "Failed to send magic link. Please try again.");
+      setStep("error");
     }
   };
 
@@ -518,8 +517,8 @@ export default function LoginPage() {
                 <p className="help-link">
                   Need help? <a href="mailto:support@legalleadsgroup.com">Contact support</a>
                 </p>
-
-            
+              </div>
+            )}
 
             {/* ── Sending State ── */}
             {step === "sending" && (
