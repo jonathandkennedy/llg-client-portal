@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
 
 async function sendMagicLink(email) {
-  const { error } = await supabase.auth.signInWithOtp({ email });
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.origin },
+  });
   if (error) throw error;
   return true;
 }
@@ -38,7 +41,7 @@ function Orbs() {
 }
 
 // ─── Main Login Component ──────────────────────────────────────────────────
-export default function LoginPage({ onDemoLogin }) {
+export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [step, setStep] = useState("email"); // email | sending | sent | error
   const [errorMsg, setErrorMsg] = useState("");
@@ -516,29 +519,7 @@ export default function LoginPage({ onDemoLogin }) {
                   Need help? <a href="mailto:support@legalleadsgroup.com">Contact support</a>
                 </p>
 
-                {onDemoLogin && (
-                  <>
-                    <div className="divider">
-                      <div className="divider-line" />
-                      <span className="divider-text">Or</span>
-                      <div className="divider-line" />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={onDemoLogin}
-                      style={{
-                        width: "100%", height: 48, border: "2px solid #E8E4EE",
-                        borderRadius: 12, background: "transparent",
-                        fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600,
-                        color: "#4A4358", cursor: "pointer", transition: "all 0.2s",
-                      }}
-                      onMouseEnter={e => { e.target.style.borderColor = "#5B2D8E"; e.target.style.color = "#5B2D8E"; }}
-                      onMouseLeave={e => { e.target.style.borderColor = "#E8E4EE"; e.target.style.color = "#4A4358"; }}
-                    >
-                      View Demo Dashboard
-                    </button>
-                  </>
-                )}
+                {
               </div>
             )}
 

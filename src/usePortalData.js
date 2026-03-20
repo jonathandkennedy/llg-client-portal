@@ -1,6 +1,6 @@
 // ─── usePortalData.js ──────────────────────────────────────────────────────
-// React hooks for fetching dashboard data from Supabase.
-// Falls back to demo data when Supabase is not configured.
+// React hooks for fetching client portal data from Supabase.
+// Falls back to demo data when no data exists for the client.
 // ────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect, useCallback } from "react";
@@ -13,15 +13,25 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data } = supabase.auth.getSession();
-    if (data?.session?.user) {
-      setUser(data.session.user);
-    }
-    setLoading(false);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user || null);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user || null);
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signInWithMagicLink = async (email) => {
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
     if (error) throw error;
   };
 
@@ -33,13 +43,6 @@ export function useAuth() {
   return { user, loading, signInWithMagicLink, signOut };
 }
 
-// ─── Helper: detect if Supabase is configured ─────────────────────────────
-
-function isSupabaseConfigured() {
-  // The placeholder URL means the user hasn't set up Supabase yet
-  return !supabase.url.includes("YOUR_PROJECT");
-}
-
 // ─── Generic fetch-or-fallback hook ────────────────────────────────────────
 
 function useSupabaseQuery(queryFn, fallbackData, deps = []) {
@@ -48,20 +51,18 @@ function useSupabaseQuery(queryFn, fallbackData, deps = []) {
   const [error, setError] = useState(null);
 
   const refetch = useCallback(async () => {
-    if (!isSupabaseConfigured()) {
-      setData(fallbackData);
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
       const result = await queryFn();
       if (result.error) throw result.error;
-      setData(result.data && result.data.length > 0 ? result.data : fallbackData);
+      if (result.data && (Array.isArray(result.data) ? result.data.length > 0 : result.data)) {
+        setData(result.data);
+      } else {
+        setData(fallbackData);
+      }
       setError(null);
     } catch (err) {
-      console.warn("Supabase fetch failed, using demo data:", err);
+      console.warn("Supabase fetch failed, using fallback data:", err?.message || err);
       setData(fallbackData);
       setError(err);
     } finally {
@@ -80,11 +81,11 @@ function useSupabaseQuery(queryFn, fallbackData, deps = []) {
 
 const DEMO_CLIENT = {
   id: "demo",
-  firm_name: "Azizi Law Firm",
-  contact_name: "Zain Azizi",
-  email: "zain@azizilaw.com",
+  firm_name: "Your Law Firm",
+  contact_name: "Client",
+  email: "client@example.com",
   avatar_url: null,
-  package_name: "Saturn - Rhea Package",
+  package_name: "Saturn Package",
   package_price: "$5999/mo",
 };
 
@@ -104,28 +105,20 @@ const DEMO_LIGHTHOUSE = [
 ];
 
 const DEMO_TICKETS = [
-  { id: "t1", title: "Change courthouse in social post", description: "The social media post from Feb 5th references the wrong courthouse. Should be Los Angeles Superior Court, not Orange County.", status: "closed", created_at: new Date(Date.now() - 86400000 * 5).toISOString(), closed_at: new Date(Date.now() - 86400000 * 3).toISOString() },
-  { id: "t2", title: "Feb 2nd update blog info", description: "The blog post about settlement amounts needs to be updated with the new 2026 statistics. I'll attach the data sheet.", status: "closed", created_at: new Date(Date.now() - 86400000 * 8).toISOString(), closed_at: new Date(Date.now() - 86400000 * 6).toISOString() },
-  { id: "t3", title: "Add new attorney headshot to team page", description: "We hired a new associate, Maria Gonzalez. Please add her headshot and bio to the team page. Photo attached.", status: "open", created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
-  { id: "t4", title: "Update office hours for holiday schedule", description: "We need to update the hours on our Google Business Profile and website for the upcoming holiday closures: Mar 28-31.", status: "open", created_at: new Date(Date.now() - 86400000).toISOString() },
-  { id: "t5", title: "Fix broken link on car accident page", description: "The 'Learn More' button in the FAQ section of the car accident landing page leads to a 404.", status: "closed", created_at: new Date(Date.now() - 86400000 * 14).toISOString(), closed_at: new Date(Date.now() - 86400000 * 12).toISOString() },
-  { id: "t6", title: "Request Google review response templates", description: "Can you provide us with some professional response templates for both positive and negative Google reviews?", status: "closed", created_at: new Date(Date.now() - 86400000 * 20).toISOString(), closed_at: new Date(Date.now() - 86400000 * 18).toISOString() },
+  { id: "t1", title: "Change courthouse in social post", description: "The social media post references the wrong courthouse.", status: "closed", created_at: new Date(Date.now() - 86400000 * 5).toISOString(), closed_at: new Date(Date.now() - 86400000 * 3).toISOString() },
+  { id: "t2", title: "Add new attorney headshot to team page", description: "We hired a new associate. Please add her headshot and bio.", status: "open", created_at: new Date(Date.now() - 86400000 * 2).toISOString() },
+  { id: "t3", title: "Update office hours for holiday schedule", description: "We need to update the hours on our Google Business Profile.", status: "open", created_at: new Date(Date.now() - 86400000).toISOString() },
 ];
 
 const DEMO_TEAM = [
-  { role: "SEO Manager", name: "Nick Offerman", color: "#5B2D8E", sort_order: 1, specialty: "On-page SEO, keyword strategy, content planning", status: "available", email: "nick@legalleadsgroup.com" },
-  { role: "FAQ Search", name: "Hans Gruber", color: "#3DAA6D", sort_order: 2, specialty: "FAQ schema markup, voice search optimization", status: "available", email: "hans@legalleadsgroup.com" },
-  { role: "Paid Ads", name: "Larry David", color: "#C4A450", sort_order: 3, specialty: "Google Ads, PPC campaigns, conversion tracking", status: "available", email: "larry@legalleadsgroup.com" },
-  { role: "AI Search", name: "2/AI Search", color: "#E67E22", sort_order: 4, specialty: "AI search optimization, entity SEO, knowledge panels", status: "busy", email: "ai@legalleadsgroup.com" },
-  { role: "Web Dev", name: "Sheldon Cooper", color: "#3498DB", sort_order: 5, specialty: "Site speed, Core Web Vitals, technical SEO", status: "available", email: "sheldon@legalleadsgroup.com" },
-  { role: "Press Release", name: "Tony Montana", color: "#95A5A6", sort_order: 6, specialty: "PR distribution, media outreach, backlink building", status: "busy", email: "tony@legalleadsgroup.com" },
+  { role: "SEO Manager", name: "Your SEO Lead", color: "#5B2D8E", sort_order: 1, specialty: "On-page SEO, keyword strategy, content planning", status: "available", email: "seo@legalleadsgroup.com" },
+  { role: "Web Dev", name: "Your Developer", color: "#3498DB", sort_order: 2, specialty: "Site speed, Core Web Vitals, technical SEO", status: "available", email: "dev@legalleadsgroup.com" },
+  { role: "Paid Ads", name: "Your Ads Manager", color: "#C4A450", sort_order: 3, specialty: "Google Ads, PPC campaigns, conversion tracking", status: "available", email: "ads@legalleadsgroup.com" },
 ];
 
 const DEMO_UPDATES = [
   { type: "Recent", text: "Blog post added", color: "#5B2D8E", created_at: new Date(Date.now() - 7200000).toISOString() },
   { type: "Recent", text: "YouTube Video added", color: "#C4A450", created_at: new Date(Date.now() - 7200000).toISOString() },
-  { type: "Recent", text: "Facebook Post", color: "#3DAA6D", created_at: new Date(Date.now() - 7200000).toISOString() },
-  { type: "Uncent", text: "FAQ search added", color: "#95A5A6", created_at: new Date(Date.now() - 7200000).toISOString() },
 ];
 
 const DEMO_INTEGRATIONS = [
@@ -135,39 +128,77 @@ const DEMO_INTEGRATIONS = [
 ];
 
 const DEMO_DELIVERABLES = [
-  // SEO Pages Done (progress id "1")
-  { id: "d1",  seo_progress_id: "1", title: "Car Accident Lawyer",          language: "EN", status: "complete",    assigned_to: "Nick Offerman",  url: "https://azizilaw.com/car-accident-lawyer",  completed_at: "2025-12-15T00:00:00Z", sort_order: 1 },
-  { id: "d2",  seo_progress_id: "1", title: "Personal Injury Attorney",     language: "EN", status: "complete",    assigned_to: "Nick Offerman",  url: "https://azizilaw.com/personal-injury",      completed_at: "2025-12-28T00:00:00Z", sort_order: 2 },
-  { id: "d3",  seo_progress_id: "1", title: "Truck Accident Lawyer",        language: "EN", status: "in_progress", assigned_to: "Nick Offerman",  started_at: "2026-01-10T00:00:00Z",               sort_order: 3 },
-  { id: "d4",  seo_progress_id: "1", title: "Abogado de Accidentes",        language: "ES", status: "complete",    assigned_to: "Nick Offerman",  url: "https://azizilaw.com/es/abogado-accidentes", completed_at: "2026-01-05T00:00:00Z", sort_order: 4 },
-  { id: "d5",  seo_progress_id: "1", title: "Abogado de Lesiones Personales", language: "ES", status: "pending",  assigned_to: "Nick Offerman",  sort_order: 5 },
-  { id: "d6",  seo_progress_id: "1", title: "Abogado de Accidentes de Camión", language: "ES", status: "pending", assigned_to: "Nick Offerman",  sort_order: 6 },
-  // YouTube Videos (progress id "2")
-  { id: "d7",  seo_progress_id: "2", title: "What To Do After a Car Accident",     language: "EN", status: "complete",    assigned_to: "Hans Gruber",  url: "https://youtube.com/watch?v=abc1", completed_at: "2025-11-20T00:00:00Z", sort_order: 1 },
-  { id: "d8",  seo_progress_id: "2", title: "How to Choose a Personal Injury Lawyer", language: "EN", status: "complete", assigned_to: "Hans Gruber",  url: "https://youtube.com/watch?v=abc2", completed_at: "2026-01-08T00:00:00Z", sort_order: 2 },
-  { id: "d9",  seo_progress_id: "2", title: "Qué Hacer Después de un Accidente",   language: "ES", status: "complete",    assigned_to: "Hans Gruber",  url: "https://youtube.com/watch?v=abc3", completed_at: "2026-01-12T00:00:00Z", sort_order: 3 },
-  { id: "d10", seo_progress_id: "2", title: "Cómo Elegir un Abogado",              language: "ES", status: "in_progress", assigned_to: "Hans Gruber",  started_at: "2026-02-01T00:00:00Z",     sort_order: 4 },
-  // FAQ VOICE Search (progress id "3")
-  { id: "d11", seo_progress_id: "3", title: "FAQ Schema – Car Accidents",       language: "EN", status: "complete", assigned_to: "Hans Gruber", completed_at: "2025-11-10T00:00:00Z", sort_order: 1 },
-  { id: "d12", seo_progress_id: "3", title: "FAQ Schema – Personal Injury",     language: "EN", status: "complete", assigned_to: "Hans Gruber", completed_at: "2025-12-01T00:00:00Z", sort_order: 2 },
-  { id: "d13", seo_progress_id: "3", title: "FAQ Schema – Truck Accidents",     language: "EN", status: "complete", assigned_to: "Hans Gruber", completed_at: "2025-12-20T00:00:00Z", sort_order: 3 },
-  { id: "d14", seo_progress_id: "3", title: "FAQ Schema – Workplace Injury",    language: "EN", status: "complete", assigned_to: "Hans Gruber", completed_at: "2026-01-15T00:00:00Z", sort_order: 4 },
-  // AI Search (progress id "4")
-  { id: "d15", seo_progress_id: "4", title: "AI Search – Firm Overview",        language: "EN", status: "complete",    assigned_to: "2/AI Search", completed_at: "2026-01-02T00:00:00Z", sort_order: 1 },
-  { id: "d16", seo_progress_id: "4", title: "AI Search – Practice Areas",       language: "EN", status: "complete",    assigned_to: "2/AI Search", completed_at: "2026-01-18T00:00:00Z", sort_order: 2 },
-  { id: "d17", seo_progress_id: "4", title: "AI Search – Attorney Profiles",    language: "EN", status: "in_progress", assigned_to: "2/AI Search", started_at: "2026-02-10T00:00:00Z",  sort_order: 3 },
-  // Press Release (progress id "5")
-  { id: "d18", seo_progress_id: "5", title: "Firm Launch Press Release",        language: "EN", status: "pending", assigned_to: "Tony Montana", sort_order: 1 },
+  { id: "d1", seo_progress_id: "1", title: "Personal Injury Landing Page", language: "EN", status: "complete", url: "https://example.com/personal-injury", completed_at: new Date(Date.now() - 12*86400000).toISOString(), sort_order: 1 },
+  { id: "d2", seo_progress_id: "1", title: "Car Accident Attorney Page", language: "EN", status: "complete", url: "https://example.com/car-accident", completed_at: new Date(Date.now() - 8*86400000).toISOString(), sort_order: 2 },
+  { id: "d3", seo_progress_id: "1", title: "Abogado de Lesiones Personales", language: "ES", status: "in_progress", url: null, completed_at: null, sort_order: 3 },
+  { id: "d4", seo_progress_id: "2", title: "What To Do After a Car Accident", language: "EN", status: "complete", url: "https://youtube.com/watch?v=abc123", completed_at: new Date(Date.now() - 14*86400000).toISOString(), sort_order: 1 },
+  { id: "d5", seo_progress_id: "5", title: "Firm Launch Press Release", language: "EN", status: "pending", completed_at: null, sort_order: 1 },
 ];
 
 // ─── Data Hooks ────────────────────────────────────────────────────────────
 
-/** Fetch the current client's profile */
+/**
+ * Fetch the current client's profile.
+ * Looks up the clients table by matching the logged-in user's auth ID.
+ * If the user is a team member (not a client), returns demo data.
+ */
 export function useClient() {
-  return useSupabaseQuery(
-    () => supabase.from("clients").select("*").single(),
-    DEMO_CLIENT
-  );
+  const [data, setData] = useState(DEMO_CLIENT);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchClient() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          setData(DEMO_CLIENT);
+          setLoading(false);
+          return;
+        }
+
+        // Try to find a client record linked to this auth user
+        const { data: clientData, error: clientError } = await supabase
+          .from("clients")
+          .select("*")
+          .eq("user_id", user.id)
+          .limit(1)
+          .single();
+
+        if (clientError || !clientData) {
+          // User might be a team member viewing demo, or client not set up yet
+          // Enrich demo data with real email
+          setData({ ...DEMO_CLIENT, email: user.email });
+        } else {
+          // Found real client — also fetch their project for package info
+          const { data: projectData } = await supabase
+            .from("projects")
+            .select("*, packages(name, monthly_price)")
+            .eq("client_id", clientData.id)
+            .limit(1)
+            .single();
+
+          setData({
+            ...clientData,
+            package_name: projectData?.packages?.name || "Saturn Package",
+            package_price: projectData?.packages?.monthly_price
+              ? `$${Number(projectData.packages.monthly_price).toLocaleString()}/mo`
+              : "—",
+          });
+        }
+      } catch (err) {
+        console.warn("Client fetch error:", err?.message || err);
+        setData(DEMO_CLIENT);
+        setError(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchClient();
+  }, []);
+
+  return { data, loading, error };
 }
 
 /** Fetch SEO progress with sub-counts */
@@ -226,21 +257,6 @@ export function useTickets(clientId) {
   );
 
   const createTicket = async ({ title, description, fileUrls = [] }) => {
-    if (!isSupabaseConfigured()) {
-      // Demo mode: add to local state
-      const newTicket = {
-        id: `t${Date.now()}`,
-        client_id: clientId,
-        title,
-        description,
-        status: "open",
-        file_urls: fileUrls,
-        created_at: new Date().toISOString(),
-      };
-      result.refetch(); // Would re-pull in production
-      return { data: newTicket, error: null };
-    }
-
     const { data, error } = await supabase.from("tickets").insert([
       {
         client_id: clientId,
@@ -258,7 +274,7 @@ export function useTickets(clientId) {
   return { ...result, createTicket };
 }
 
-/** Fetch team members */
+/** Fetch team members assigned to this client */
 export function useTeam(clientId) {
   return useSupabaseQuery(
     () =>
@@ -272,7 +288,7 @@ export function useTeam(clientId) {
   );
 }
 
-/** Fetch recent updates */
+/** Fetch recent updates for this client */
 export function useUpdates(clientId) {
   return useSupabaseQuery(
     () =>
@@ -287,7 +303,7 @@ export function useUpdates(clientId) {
   );
 }
 
-/** Fetch integrations */
+/** Fetch connected integrations for this client */
 export function useIntegrations(clientId) {
   return useSupabaseQuery(
     () =>

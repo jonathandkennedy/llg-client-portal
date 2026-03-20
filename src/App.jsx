@@ -39,7 +39,7 @@ function ProfilePage({ user, onSignOut }) {
       }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: "#7B6F8E", marginBottom: 4 }}>Email</div>
         <div style={{ fontSize: 15, fontWeight: 600, color: "#1A1222", marginBottom: 20 }}>
-          {user?.email || "demo@legalleadsgroup.com"}
+          {user?.email || "—"}
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 600, color: "#7B6F8E", marginBottom: 4 }}>User ID</div>
@@ -48,7 +48,7 @@ function ProfilePage({ user, onSignOut }) {
           background: "#F7F5FA", padding: "8px 12px", borderRadius: 8, marginBottom: 20,
           wordBreak: "break-all",
         }}>
-          {user?.id || "demo-mode"}
+          {user?.id || "—"}
         </div>
 
         <div style={{ fontSize: 13, fontWeight: 600, color: "#7B6F8E", marginBottom: 4 }}>Last sign in</div>
@@ -127,40 +127,40 @@ function LoadingScreen() {
 
 // ─── Main App ──────────────────────────────────────────────────────────────
 export default function App() {
-  const [authState, setAuthState] = useState("loading"); // loading | unauthenticated | authenticated
+  const [authState, setAuthState] = useState("loading");
   const [user, setUser] = useState(null);
   const [currentRoute, setCurrentRoute] = useState(getRouteFromHash());
 
-  // ── Check auth on mount + handle magic link callback ──
+  // ── Initialize auth + listen for changes ──
   useEffect(() => {
-    async function init() {
-      // Check for magic link token in URL (e.g. ?token_hash=xxx&type=magiclink)
-      const params = new URLSearchParams(window.location.search);
-      const tokenHash = params.get("token_hash");
-      const type = params.get("type");
-
-      if (tokenHash && type === "magiclink") {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(tokenHash);
-        if (!error && data) {
-          setUser(data.user);
-          setAuthState("authenticated");
-          // Clean up URL
-          window.history.replaceState({}, "", window.location.pathname + window.location.hash);
-          return;
-        }
-      }
-
-      // Check existing session
-      const { data } = supabase.auth.getSession();
-      if (data?.session?.user) {
-        setUser(data.session.user);
+    // Get existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user);
         setAuthState("authenticated");
       } else {
         setAuthState("unauthenticated");
       }
-    }
+    });
 
-    init();
+    // Listen for auth state changes (handles magic link callback automatically)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (event === "SIGNED_IN" && session?.user) {
+          setUser(session.user);
+          setAuthState("authenticated");
+          // Clean up URL params from magic link
+          if (window.location.search) {
+            window.history.replaceState({}, "", window.location.pathname + window.location.hash);
+          }
+        } else if (event === "SIGNED_OUT") {
+          setUser(null);
+          setAuthState("unauthenticated");
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   // ── Listen for hash changes ──
@@ -188,24 +188,13 @@ export default function App() {
     window.location.hash = "";
   };
 
-  // ── Magic link sent callback (from login page) ──
-  const handleMagicLinkSent = () => {
-    // In demo mode, simulate login after the "check email" screen
-  };
-
-  // ── Demo login (skip auth for development) ──
-  const handleDemoLogin = () => {
-    setUser({ id: "demo", email: "demo@legalleadsgroup.com" });
-    setAuthState("authenticated");
-  };
-
   // ── Render ──
   if (authState === "loading") {
     return <LoadingScreen />;
   }
 
   if (authState === "unauthenticated") {
-    return <LoginPage onDemoLogin={handleDemoLogin} />;
+    return <LoginPage />;
   }
 
   return (

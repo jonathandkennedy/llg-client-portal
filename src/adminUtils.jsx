@@ -7,7 +7,13 @@ export function useAdmin() {
   const [loading, setLoading] = useState(true);
   useEffect(() => {
     async function check() {
-      try { const { data } = await supabase.from("admin_users").select("id").limit(1); setIsAdmin(data && data.length > 0); } catch { setIsAdmin(false); }
+      try const { data: { user } } = await supabase.auth.getUser();
+if (user) {
+  const { data } = await supabase.from("users").select("role").eq("id", user.id).single();
+  setIsAdmin(data?.role === "admin");
+} else {
+  setIsAdmin(false);
+} catch { setIsAdmin(false); }
       setLoading(false);
     }
     if (supabase.url.includes("YOUR_PROJECT")) { setIsAdmin(true); setLoading(false); } else check();
